@@ -28,7 +28,12 @@ def get_data(data, data_types, jumps):
             decoded = struct.unpack('b', current)[0]
         
         #adds decoded data to the dict
-        return_dict[i] = decoded
+        #return_dict[i] = decoded
+        
+        if i == 'Speed':
+            yield decoded
+
+
         
         
         #removes already read bytes from the variable
@@ -70,10 +75,9 @@ def main():
         data, addr = sock.recvfrom(1500) # buffer size is 1500 bytes, this line reads data from the socket
 
         #received data is now in the retuturned_data dict, key names are in data_format.txt
-        returned_data = get_data(data, data_types, jumps)
-        
-        speed = returned_data['Speed']
-        return speed
+
+        for speed_value in get_data(data, data_types, jumps):
+            speed_values.append(speed_value)
 
 
 
