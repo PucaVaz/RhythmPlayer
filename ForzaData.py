@@ -2,20 +2,18 @@ import socket
 import struct
 
 def get_data(data, data_types, jumps):
-    return_dict={}
+    return_dict = {}
 
-    #additional var
     passed_data = data
     
     for i in data_types:
-        d_type = data_types[i]#checks data type (s32, u32 etc.)
-        jump=jumps[d_type]#gets size of data
-        current = passed_data[:jump]#gets data
+        d_type = data_types[i]
+        jump = jumps[d_type]
+        current = passed_data[:jump]
 
         decoded = 0
-        #complicated decoding for each type of data
         if d_type == 's32':
-            decoded = int.from_bytes(current, byteorder='little', signed = True)
+            decoded = int.from_bytes(current, byteorder='little', signed=True)
         elif d_type == 'u32':
             decoded = int.from_bytes(current, byteorder='little', signed=False)
         elif d_type == 'f32':
@@ -26,62 +24,40 @@ def get_data(data, data_types, jumps):
             decoded = struct.unpack('B', current)[0]
         elif d_type == 's8':
             decoded = struct.unpack('b', current)[0]
-        
-        #adds decoded data to the dict
-        #return_dict[i] = decoded
-        
-        if i == 'Speed':
-            yield decoded
 
-
-        
-        
-        #removes already read bytes from the variable
+        return_dict[i] = decoded
         passed_data = passed_data[jump:]
-    
-    
-    
-    #returns the dict
+
     return return_dict
 
-def main():
-    UDP_IP = "127.0.0.1" # Running on local forza
-    UDP_PORT = 5605 # Default fh port
-    #reading data and assigning names to data types in data_types dict
+def get_speed_data():
+    UDP_IP = "127.0.0.1"
+    UDP_PORT = 5605
     data_types = {}
     with open('data_format.txt', 'r') as f:
         lines = f.read().split('\n')
         for line in lines:
             data_types[line.split()[1]] = line.split()[0]
 
-    #assigning sizes in bytes to each variable type
-    jumps={
-        's32': 4, #Signed 32bit int, 4 bytes of size
-        'u32': 4, #Unsigned 32bit int
-        'f32': 4, #Floating point 32bit
-        'u16': 2, #Unsigned 16bit int
-        'u8': 1, #Unsigned 8bit int
-        's8': 1, #Signed 8bit int
-        'hzn': 12 #Unknown, 12 bytes of.. something
+    jumps = {
+        's32': 4,
+        'u32': 4,
+        'f32': 4,
+        'u16': 2,
+        'u8': 1,
+        's8': 1,
+        'hzn': 12
     }
-    
-    #setting up an udp server
-    sock = socket.socket(socket.AF_INET, # Internet
-                        socket.SOCK_DGRAM) # UDP
 
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((UDP_IP, UDP_PORT))
 
     while True:
-        data, addr = sock.recvfrom(1500) # buffer size is 1500 bytes, this line reads data from the socket
+        data, addr = sock.recvfrom(1500)
+        returned_data = get_data(data, data_types, jumps)
+        
+        # Assuming 'Speed' is the key for speed data in the dictionary
+        if 'Speed' in returned_data:
+            yield returned_data['Speed']
 
-        #received data is now in the retuturned_data dict, key names are in data_format.txt
-
-        for speed_value in get_data(data, data_types, jumps):
-            speed_values.append(speed_value)
-
-
-
-
-
-if __name__ == "__main__":
-    main()
+# Acho que agora funciona melhor, pedi muita ajuda ao chatgpt pq tava perdido em relação ao yield
