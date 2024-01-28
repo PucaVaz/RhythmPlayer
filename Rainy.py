@@ -1,6 +1,6 @@
 import atexit
 import dearpygui.dearpygui as dpg
-from ForzaFake import get_speed
+from Forza import get_speed_data
 import json
 from mutagen.mp3 import MP3
 import ntpath
@@ -31,9 +31,11 @@ def update_volume(sender, app_data):  # altera o volume da musica
     pygame.mixer.music.set_volume(app_data / 100.0)
 
 def volume_based_on_speed():
-    for speed in get_speed():
-        pygame.mixer.music.set_volume(speed / 100.0)
-        print("\n \n", pygame.mixer.music.get_volume())
+    while True:
+        print("agora")
+        speed  = get_speed_data()
+        pygame.mixer.music.set_volume(speed / 85.0)
+        time.sleep(1)
 
 def load_database():
     songs = json.load(open("data/songs.json", "r+"))["songs"]
