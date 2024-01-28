@@ -11,6 +11,8 @@ import os
 import atexit
 from music import Music
 from moises import Moises as moises
+from ForzaData import get_speed_data
+import webbrowser
 
 dpg.create_context()
 dpg.create_viewport(title="Rhythm Player",
@@ -73,6 +75,19 @@ def play_vocal(file_path, volume):
     sound.set_volume(volume)
     sound.play()
     return sound
+
+# Mudar o vocal com base da velocidade do carro
+def volume_based_on_speed():
+    while True:
+        speed  = get_speed_data() / 65
+        if(speed == 0):
+            pygame.mixer.music.set_volume(0.6)
+        if (speed < 1):
+            sound.set_volume(speed)
+            pygame.mixer.music.set_volume(1)
+        else:
+            sound.set_volume(1)
+        time.sleep(0.6)
 
 # Atualiza a base de dados
 
@@ -150,6 +165,7 @@ def play(sender, app_data, user_data):
 
         # Tocando vocal
         vocal = play_vocal(user_data.vocal, 0.1)
+        volume_based_on_speed()
 
         no = user_data
 
