@@ -1,14 +1,16 @@
+import atexit
 import dearpygui.dearpygui as dpg
-import ntpath
+from ForzaFake import get_speed
 import json
 from mutagen.mp3 import MP3
-from tkinter import Tk, filedialog
-import threading
-import pygame
-import time
-import random
+import ntpath
 import os
-import atexit
+import pygame
+import random
+import threading
+from tkinter import Tk, filedialog
+import time
+import webbrowser
 from moises import Moises as moises
 
 dpg.create_context()
@@ -28,6 +30,10 @@ pygame.mixer.music.set_volume(0.5)
 def update_volume(sender, app_data):  # altera o volume da musica
     pygame.mixer.music.set_volume(app_data / 100.0)
 
+def volume_based_on_speed():
+    for speed in get_speed():
+        pygame.mixer.music.set_volume(speed / 100.0)
+        print("\n \n", pygame.mixer.music.get_volume())
 
 def load_database():
     songs = json.load(open("data/songs.json", "r+"))["songs"]
@@ -85,6 +91,7 @@ def play(sender, app_data, user_data):
         if pygame.mixer.music.get_busy():
             dpg.configure_item("play", label="Pause")
             state = "playing"
+            volume_based_on_speed()
             dpg.configure_item("cstate", default_value=f"State: Playing")
             dpg.configure_item(
                 "csong", default_value=f"Now Playing : {ntpath.basename(user_data)}")
