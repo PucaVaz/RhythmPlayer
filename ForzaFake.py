@@ -1,7 +1,10 @@
 import time
+import random
 
 def get_speed():
-    for i in reversed(range(0, 101, 5)):
-        time.sleep(2)
-        yield i
+    random_speed = 0
+
+    while True:
+        random_speed = random.randint(0, 130)
+        return random_speed
 

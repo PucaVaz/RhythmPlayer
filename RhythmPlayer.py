@@ -24,32 +24,38 @@ state = None
 global no
 no = 0
 
+global channel # servira para controlar a faixa do vocal em qualquer parte do codigo
+
 global sound
 sound = None
 
 global audio
 audio = None
 
+global stand_volume # volume padrao da musica
+stand_volume = 0.5
+
 _DEFAULT_MUSIC_VOLUME = 0.5
 pygame.mixer.music.set_volume(0.5)
 
-
 def update_volume(sender, app_data):  # altera o volume da musica
+    global stand_volume
     pygame.mixer.music.set_volume(app_data / 100.0)
+    channel.set_volume(app_data / 100.0)
+    stand_volume = app_data / 100.0
 
 # Carrega os arquivos de som
 
-
 def load_database():
 
-    songs = json.load(open("data/paths.json", "r+"))
+    songs = json.load(open("data/paths.json", "r+")) # carrega o arquivo json, passando os caminhos das musicas ja carregadas
     print(songs)
-    if len(songs) != 0:
+    if len(songs) != 0: # se houver musicas carregadas
         for musica, faixas in songs.items():
 
-            user = Music(musica, faixas[0], faixas[1])
+            user = Music(musica, faixas[0], faixas[1]) # cria um objeto do tipo musica, passando o nome da musica, o caminho da musica instrumental e o caminho da musica vocal
 
-            dpg.add_button(label=f"{ntpath.basename(musica)}", callback=play, width=-1,
+            dpg.add_button(label=f"{ntpath.basename(musica)}", callback=play, width=-1, # botao no front-end para tocar a musica
                            height=25, user_data=user, parent="list")
 
             dpg.add_spacer(height=2, parent="list")
@@ -57,8 +63,7 @@ def load_database():
 # Toca a musica (instrumental)
 
 
-def play_instr(file_path, volume):
-    pygame.mixer.init()
+def play_instr(file_path, volume): # toca o instrumental da musica
     pygame.mixer.music.load(file_path)
     pygame.mixer.music.set_volume(volume)
     pygame.mixer.music.play()
@@ -66,38 +71,51 @@ def play_instr(file_path, volume):
 # Toca a parte vocal da música
 
 
-def play_vocal(file_path, volume):
+def play_vocal(file_path, volume): # toca o vocal da musica, funçoes diferentes para poder sobrebor as duas faixas e poder controlar o volume de cada uma
+    global sound, channel # variavel global para poder controlar o vocal
 
-    global sound
-
-    pygame.mixer.init()
     sound = pygame.mixer.Sound(file_path)
     sound.set_volume(volume)
-    sound.play()
+    channel = sound.play()
     return sound
 
 # Mudar o vocal com base da velocidade do carro
-def volume_based_on_speed():
-    while True:
+'''def volume_based_on_speed():
+    global stand_volume, state, channel
+
+    while pygame.mixer.music.get_busy() or state != 'paused':
         speed  = get_speed_data() / 65
         if(speed == 0):
-            pygame.mixer.music.set_volume(0.6)
+            pygame.mixer.music.set_volume(0.6*stand_volume)
         if (speed < 1):
-            sound.set_volume(speed)
-            pygame.mixer.music.set_volume(1)
+            channel.set_volume(speed*stand_volume)
+            pygame.mixer.music.set_volume(1*stand_volume)
         else:
-            sound.set_volume(1)
+            channel.set_volume(1*stand_volume)
+        time.sleep(0.6)
+'''
+
+def volume_based_on_speed():
+    global stand_volume, state, channel
+
+    while pygame.mixer.music.get_busy() or state != 'paused':
+        speed  = get_speed_data() / 65
+        if(speed == 0):
+            pygame.mixer.music.set_volume(0.6*stand_volume)
+        if (speed < 1):
+            channel.set_volume(speed*stand_volume)
+            pygame.mixer.music.set_volume(1*stand_volume)
+        else:
+            channel.set_volume(1*stand_volume)
         time.sleep(0.6)
 
-# Atualiza a base de dados
-
+# Atualiza o json ("banco de dados") com os caminhos das musicas
 
 def update_database(filename: str):
     data = json.load(open("data/paths.json", "r+"))
     if filename not in data.keys():
         data["songs"] += [filename]
     json.dump(data, open("data/songs.json", "r+"), indent=4)
-
 
 def update_database_separados(dic, filename: str):
     # # # Acessar o primeiro endereço de arquivo
@@ -129,14 +147,12 @@ def update_database_separados(dic, filename: str):
 
     json.dump(data, open("data/paths.json", "r+"), indent=4)
 
-
 # Atualiza o controle deslizante de posição
-
 
 def update_slider():
     global state, audio
     while pygame.mixer.music.get_busy() or state != 'paused':
-        print(f'{pygame.mixer.music.get_pos()/1000} - {audio.info.length}')
+        #print(f'{pygame.mixer.music.get_pos()/1000} - {audio.info.length}')
         #print(type(pygame.mixer.music.get_pos()/1000))
         #print(type(audio.info.length))
         if (pygame.mixer.music.get_pos()/1000 >= (audio.info.length)-2.1):
@@ -155,25 +171,24 @@ def update_slider():
 
 def play(sender, app_data, user_data):
 
-    global state, no, sound, audio
+    global state, no, sound, audio, stand_volume
 
     if user_data:
         if sound != None:
             sound.stop()
         # Tocando música - instrumental
-        play_instr(user_data.instrumental, 1.0)
+        play_instr(user_data.instrumental, stand_volume)
 
         # Tocando vocal
-        vocal = play_vocal(user_data.vocal, 0.1)
-        volume_based_on_speed()
+        vocal = play_vocal(user_data.vocal, stand_volume)
 
         no = user_data
 
         audio = WAVE(user_data.instrumental)
-
         dpg.configure_item(item="pos", max_value=audio.info.length)
 
         thread = threading.Thread(target=update_slider, daemon=False).start()
+
         if pygame.mixer.music.get_busy():
             dpg.configure_item("play", label="Pause")
             state = "playing"
@@ -181,6 +196,8 @@ def play(sender, app_data, user_data):
             dpg.configure_item(
                 "csong", default_value=f"Now Playing : {ntpath.basename(user_data.musica)}")
 
+        thread_speed = threading.Thread(target=volume_based_on_speed, daemon=False).start()
+        
         return vocal
 
 # Controla o play/pause
@@ -229,7 +246,6 @@ def pre():
 
 # Reproduz a próxima música
 
-
 def next_():
     global state, no
     try:
@@ -244,7 +260,6 @@ def next_():
         pass
 
 # Pausa a reprodução
-
 
 def stop():
     global state, sound
@@ -271,7 +286,6 @@ def add_files():
                            height=25, user_data=musica_adicionada, parent="list")
             dpg.add_spacer(height=2, parent="list")
     # load_database()
-
 
 def add_folder():
     data = json.load(open("data/paths.json", "r"))
@@ -377,8 +391,9 @@ with dpg.window(tag="main", label="window title"):
     # Adicionando conteúdo na barra lateral
     with dpg.group(horizontal=True):
         with dpg.child_window(width=200, tag="sidebar"):
-            dpg.add_text("Rainy Musicart", color=(137, 142, 255))
+            dpg.add_text("RhythmPlayer", color=(137, 142, 255))
             dpg.add_text("Build by NotCookey")
+            dpg.add_text("and expanded by Express")
             dpg.add_spacer(height=2)
             dpg.add_button(label="Support", width=-1, height=23,
                            callback=lambda: webbrowser.open(url="https://github.com/NotCookey/Rainy"))
@@ -436,7 +451,6 @@ dpg.bind_font(monobold)
 def safe_exit():
     pygame.mixer.music.stop()
     pygame.quit()
-
 
 atexit.register(safe_exit)
 

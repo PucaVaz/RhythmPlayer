@@ -4,6 +4,7 @@ import time
 import os
 import wget
 
+# CLASSE CRIADA PARA ORGANIZAR OS REQUESTS PARA A API DA MUSIC.AI DE FORMA MAIS SIMPLES E CONCENTRADA
 
 class Moises:
 
@@ -15,7 +16,7 @@ class Moises:
             'Authorization': self.api_key,
         }
         response = requests.get(
-            "https://api.music.ai/api/upload", headers=headers)
+            "https://api.music.ai/api/upload", headers=headers) # request para o serviço de upload de arquivos da music.ai
         json_data = response.json()
 
         upload_url = json_data['uploadUrl']
@@ -31,15 +32,14 @@ class Moises:
         }
 
         response = requests.put(
-            upload_url, headers=headers, data=open(arquivo, 'rb'))
+            upload_url, headers=headers, data=open(arquivo, 'rb')) # upa a musica para que o serviço da music.ai possa processar
 
         print("FUNCAO UPLOAD")
         print(response.status_code)
 
-        return download_url
+        return download_url # retorna o link para baixar o arquivo
 
-    # baixar o arquivo de audio separado
-    def download_arquivo(self, url, pasta, nome_arq):
+    def download_arquivo(self, url, pasta, nome_arq): # funçao para baixar o vocal e o instrumental da musica depois de ter sido processado
         if not (os.path.exists(pasta)):
             os.mkdir(pasta)
 
@@ -52,18 +52,21 @@ class Moises:
 
         return response
 
-    def separa_vocal(self, arquivo):
+    def separa_vocal(self, arquivo): # funçao principal para separar o vocal e o instrumental da musica
 
-        download_url = self.upload(arquivo)
-        print("parametro arquivo (separa): ", arquivo)
+        download_url = self.upload(arquivo) # upa a musica e retorna o link para baixar o arquivo
+        # print("parametro arquivo (separa): ", arquivo) 
         nome_arq = os.path.basename(arquivo)
 
         headers = {
             'Authorization': self.api_key,
             'Content-Type': 'application/json'
         }
+        
+        job_name = "separa_vocal_" + nome_arq
+
         data = {
-            "name": "job_test_from_python",
+            "name": job_name,
             "workflow": "separa_vocal",
             "params": {
                 "inputUrl": download_url
@@ -71,7 +74,7 @@ class Moises:
         }
 
         response = requests.post(
-            "https://api.music.ai/api/job", headers=headers, json=data)
+            "https://api.music.ai/api/job", headers=headers, json=data) # request para o serviço de separar vocal da music.ai
 
         print("FUNCAO SEPARA VOCAL")
         print(response.status_code)
