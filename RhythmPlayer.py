@@ -2,7 +2,7 @@ import dearpygui.dearpygui as dpg
 import ntpath
 import json
 from mutagen.wave import WAVE
-from tkinter import Tk, filedialog
+from tkinter import Tk, filedialog, simpledialog
 import threading
 import pygame
 import time
@@ -35,8 +35,22 @@ audio = None
 global stand_volume # volume padrao da musica
 stand_volume = 0.5
 
+global api_key
+api_key = None
+
 _DEFAULT_MUSIC_VOLUME = 0.5
 pygame.mixer.music.set_volume(0.5)
+
+# pede o valor da key da api
+
+def get_api_key():
+    global api_key
+    root = Tk()
+    root.withdraw()
+    # usuario insere manualmente a key da api
+    
+    api_key = simpledialog.askstring(title="API Key", prompt="Insira a sua API Key")
+    root.quit()
 
 def update_volume(sender, app_data):  # altera o volume da musica
     global stand_volume
@@ -49,7 +63,7 @@ def update_volume(sender, app_data):  # altera o volume da musica
 def load_database():
 
     songs = json.load(open("data/paths.json", "r+")) # carrega o arquivo json, passando os caminhos das musicas ja carregadas
-    print(songs)
+    #print(songs)
     if len(songs) != 0: # se houver musicas carregadas
         for musica, faixas in songs.items():
 
@@ -225,7 +239,7 @@ def play_pause():
 
         if song:
             song = Music(key, song[key][0], song[key][1])
-            print(song)
+            #print(song)
             no = song
             play(sender=any, app_data=any, user_data=song)
 
@@ -237,9 +251,9 @@ def pre():
         n = songs.index(no)
         if n == 0:
             n = len(songs)
-        print("1111111111111111111111111111111111111111")
-        print(songs[n])
-        print("11111111111111111111111111111111111111")
+        #print("1111111111111111111111111111111111111111")
+        #print(songs[n])
+        #print("11111111111111111111111111111111111111")
         play(sender=any, app_data=any, user_data=songs[n-1])
     except:
         pass
@@ -269,6 +283,8 @@ def stop():
 
 # Adiciona arquivos na reprodução
 def add_files():
+    global api_key
+
     data = json.load(open("data/paths.json", "r"))
     root = Tk()
     root.withdraw()
@@ -277,7 +293,7 @@ def add_files():
     root.quit()
     if filename.endswith(".mp3" or ".wav" or ".ogg"):
         if ntpath.basename(filename) not in data.keys():
-            ms = moises("29d82159-f9ac-4dc3-bcba-eef866e5a00e")
+            ms = moises(api_key=api_key)
             dic_musica = ms.separa_vocal(filename)
             musica_adicionada = Music(ntpath.basename(filename), dic_musica[0], dic_musica[1])
             # update_database(filename)
@@ -288,6 +304,8 @@ def add_files():
     # load_database()
 
 def add_folder():
+    global api_key
+
     data = json.load(open("data/paths.json", "r"))
     root = Tk()
     root.withdraw()
@@ -296,7 +314,7 @@ def add_folder():
     for filename in os.listdir(folder):
         if filename.endswith(".mp3" or ".wav" or ".ogg"):
             if ntpath.basename(filename) not in data.keys():
-                ms = moises("29d82159-f9ac-4dc3-bcba-eef866e5a00e")
+                ms = moises(api_key=api_key)
                 dic_musica = ms.separa_vocal(os.path.join(
                     folder, filename).replace("\\", "/"))
                 musica_adicionada = Music(ntpath.basename(filename), dic_musica[0], dic_musica[1])
@@ -406,6 +424,8 @@ with dpg.window(tag="main", label="window title"):
                            height=28, callback=add_folder)
             dpg.add_button(label="Remove All Songs", width=-
                            1, height=28, callback=removeall)
+            dpg.add_button(label="Get API Key", width=-1,
+                            height=28, callback=get_api_key)
             dpg.add_spacer(height=5)
             dpg.add_separator()
             dpg.add_spacer(height=5)
@@ -420,8 +440,8 @@ with dpg.window(tag="main", label="window title"):
                     with dpg.group(horizontal=True):
                         dpg.add_button(label="Play", width=65,
                                        height=30, tag="play", callback=play_pause)
-                        dpg.add_button(label="Pre", width=65, height=30,
-                                       show=True, tag="pre", callback=pre)
+                        '''dpg.add_button(label="Pre", width=65, height=30,
+                                       show=True, tag="pre", callback=pre)'''
                         dpg.add_button(
                             label="Next", tag="next", show=True, callback=next_, width=65, height=30)
                         dpg.add_button(
