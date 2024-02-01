@@ -11,7 +11,7 @@ https://github.com/nikidziuba/Forza_horizon_data_out_python**
 - **Download the repository**
 - **Install dependencies using pip `pip install -r requirements.txt`**
 - **Add your api key intro**
-- ** On Forza, anyone, enable data out, set the server to 127.0.0.1 ( or your pc ip if you are playing on console), and set the port to 8000 **
+- **On Forza, anyone, enable data out, set the server to 127.0.0.1 ( or your pc ip if you are playing on console), and set the port to 8000**
 - **Run RhytmPlayer.py**
 
 ## Is it open-source?
